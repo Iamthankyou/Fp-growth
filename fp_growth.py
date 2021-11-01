@@ -26,45 +26,19 @@ def find_frequent_itemsets(transactions, minimum_support, include_support=False)
     def clean_transaction(transaction):
         transaction = filter(lambda v: v in items, transaction)
         transaction = sorted(transaction, key=lambda v: items[v], reverse=True)
-        return transaction
+        return transaction  
+
+    print("Transaction: ")
+    print(transaction)
 
     master = FPTree()
     for transaction in list(map(clean_transaction, transactions)):
         master.add(transaction)
-
-    def visual_fptree(tree,file_name):
-        A = pgv.AGraph(directed=True, strict=True, rankdir="LR")
-        queue = []
-
-        A.add_node("root");
-
-        for i in tree.root.children:
-            queue.append(i)
-            A.add_edge("root", i.name)
-            A.get_node(i.name).attr["label"] = str(i.item) + ":" + str(i.count)
-
-        while queue:
-            l, queue = queue[:], []
-            for s in l:
-                print(s.item)
-                A.get_node(s.name).attr["label"] = str(s.item) + ":" + str(s.count)
-                for i in s.children:
-                    queue.append(i)
-                    A.add_edge(s.name, i.name)
-                    A.get_node(i.name).attr["label"] = str(i.item) + ":" + str(i.count)
-
-        A.graph_attr["epsilon"] = "0.001"
-        print(A.string())  # print dot file to standard output
-        A.layout("dot")  # layout with dot
-        A.draw(file_name+".png")  # write to file
-
-        image = cv2.imread(file_name+".png")
-        cv2.imshow(file_name, image)
-        cv2.waitKey(0)
+        # visual_fptree(master,"foo")
 
     # Visual FPTree without route
-    # tree = copy.copy(master)
-    # visual_fptree(tree,"foo")
+    tree = copy.copy(master)
+    visual_fptree(tree,"foo")
 
     solve = []
     for item,nodes in master.items():
@@ -83,17 +57,54 @@ def find_frequent_itemsets(transactions, minimum_support, include_support=False)
                 # New winner!
                 found_set = [item] + suffix
                 yield (found_set, support) if include_support else found_set
-
+                print(found_set, support)
                 # Build a conditional tree and recursively search for frequent
                 # itemsets within it.
                 cond_tree = conditional_tree_from_paths(tree.prefix_paths(item))
-                visual_fptree(cond_tree,str(item))
+                # print("Path: ")
+                # for path in tree.prefix_paths(item):
+                #     print("[ ", end="")
+                #     for i in path:
+                #         print(i.item + " ", end="")
+                #     print("] ", end="")
+                # visual_fptree(cond_tree,str(item))
                 for s in find_with_suffix(cond_tree, found_set):
                     yield s  # pass along the good news to our caller
 
     # Search for frequent itemsets, and yield the results we find.
     for itemset in find_with_suffix(master, []):
         yield itemset
+
+
+def visual_fptree(tree,file_name):
+    A = pgv.AGraph(directed=True, strict=True, rankdir="LR")
+    queue = []
+
+    A.add_node("root");
+
+    for i in tree.root.children:
+        queue.append(i)
+        A.add_edge("root", i.name)
+        A.get_node(i.name).attr["label"] = str(i.item) + ":" + str(i.count)
+
+    while queue:
+        l, queue = queue[:], []
+        for s in l:
+            # print(s.item)
+            A.get_node(s.name).attr["label"] = str(s.item) + ":" + str(s.count)
+            for i in s.children:
+                queue.append(i)
+                A.add_edge(s.name, i.name)
+                A.get_node(i.name).attr["label"] = str(i.item) + ":" + str(i.count)
+
+    A.graph_attr["epsilon"] = "0.001"
+    # print(A.string())  # print dot file to standard output
+    A.layout("dot")  # layout with dot
+    A.draw(file_name+".png")  # write to file
+
+    image = cv2.imread(file_name+".png")
+    cv2.imshow(file_name, image)
+    cv2.waitKey(0)
 
 
 class FPTree(object):
@@ -106,7 +117,7 @@ class FPTree(object):
         # A dictionary mapping items to the head and tail of a path of
         # "neighbors" that will hit every node containing that item.
         self._routes = {}
-
+        self._count = 0
     @property
     def root(self):
         """The root node of the tree."""
@@ -115,8 +126,16 @@ class FPTree(object):
     def add(self, transaction):
         """Add a transaction to the tree."""
         point = self._root
-
+        # print("Transactions: ", transaction , end=" ")
         for item in transaction:
+            # try:
+            #     self._count+=1
+            #     visual_fptree(self._root.tree, str(self._count))
+            # except Exception as e:
+            #     print(e)
+
+            # print(item, " ", end="")
+
             next_point = point.search(item)
             if next_point:
                 # There is already a node in this tree for the current
@@ -133,6 +152,7 @@ class FPTree(object):
                 self._update_route(next_point)
 
             point = next_point
+        print()
 
     def _update_route(self, point):
         """Add the given node to the route through all nodes for its item."""
