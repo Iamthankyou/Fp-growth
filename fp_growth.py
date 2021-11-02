@@ -373,17 +373,22 @@ def subs(l):
 # Association rules
 def assoc_rule(freq, min_conf=0.6):
     assert type(freq) is dict
+    print("Frequent patterns: ", end="")
+    print(freq)
     result = []
     for item, sup in freq.items():
         print("Sub list from " + str(item) +":", end="")
         print(subs(list(item)))
         for subitem in subs(list(item)):
+            print("Sub item: ", end="")
+            print(subitem)
             sb = [x for x in item if x not in subitem]
             if sb == [] or subitem == []:
                 continue
             if len(subitem) == 1 and (subitem[0][0] == "in" or subitem[0][0] == "out"):
                 continue
             conf = sup / freq[tuple(subitem)]
+            print({"from": subitem, "to": sb, "sup": sup, "conf": conf})
             if conf >= min_conf:
                 result.append({"from": subitem, "to": sb, "sup": sup, "conf": conf})
     return result
