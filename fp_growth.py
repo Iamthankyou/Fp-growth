@@ -57,26 +57,45 @@ def find_frequent_itemsets(transactions, minimum_support, include_support=False)
                 # New winner!
                 found_set = [item] + suffix
                 yield (found_set, support) if include_support else found_set
+                print("Frequent pattern: ", end="")
                 print(found_set, support)
+                
                 # Build a conditional tree and recursively search for frequent
                 # itemsets within it.
-                cond_tree = conditional_tree_from_paths(tree.prefix_paths(item))
-                # print("Path: ")
-                # for path in tree.prefix_paths(item):
-                #     print("[ ", end="")
-                #     for i in path:
-                #         print(i.item + " ", end="")
-                #     print("] ", end="")
-                # visual_fptree(cond_tree,str(item))
-                for s in find_with_suffix(cond_tree, found_set):
-                    yield s  # pass along the good news to our caller
+
+                tree_prefix_paths = []
+
+                # Remove node-end path for ONLY visual
+                for i in tree.prefix_paths(item):
+                    tree_prefix_paths.append(i)
+
+                c = 0
+                for i in tree_prefix_paths:
+                    if len(i)!=0:
+                        c+=1
+
+                if c != 0:
+                    cond_tree = conditional_tree_from_paths(tree_prefix_paths)
+                
+                    print("Path: ", end="")
+                    for path in tree_prefix_paths:
+                        print("[ ", end="")
+                        for i in path:
+                            print(i.item + " ", end="")
+                        print("] ", end="")
+                    print()
+                    # visual_fptree(cond_tree,str(item), item)
+                    # visual_fptree(cond_tree,str(item))
+                    
+                    for s in find_with_suffix(cond_tree, found_set):
+                        yield s  # pass along the good news to our caller
 
     # Search for frequent itemsets, and yield the results we find.
     for itemset in find_with_suffix(master, []):
         yield itemset
 
 
-def visual_fptree(tree,file_name):
+def visual_fptree(tree,file_name, item=None):
     A = pgv.AGraph(directed=True, strict=True, rankdir="LR")
     queue = []
 
@@ -93,9 +112,15 @@ def visual_fptree(tree,file_name):
             # print(s.item)
             A.get_node(s.name).attr["label"] = str(s.item) + ":" + str(s.count)
             for i in s.children:
-                queue.append(i)
-                A.add_edge(s.name, i.name)
-                A.get_node(i.name).attr["label"] = str(i.item) + ":" + str(i.count)
+                if item is not None:
+                    if i.item != item:
+                        queue.append(i)
+                        A.add_edge(s.name, i.name)
+                        A.get_node(i.name).attr["label"] = str(i.item) + ":" + str(i.count)
+                else:
+                    queue.append(i)
+                    A.add_edge(s.name, i.name)
+                    A.get_node(i.name).attr["label"] = str(i.item) + ":" + str(i.count)
 
     A.graph_attr["epsilon"] = "0.001"
     # print(A.string())  # print dot file to standard output
@@ -347,13 +372,11 @@ def subs(l):
 
 # Association rules
 def assoc_rule(freq, min_conf=0.6):
-    """
-    This assoc_rule must input a dict for itemset -> support rate
-    And also can customize your minimum confidence
-    """
     assert type(freq) is dict
     result = []
     for item, sup in freq.items():
+        print("Sub list from " + str(item) +":", end="")
+        print(subs(list(item)))
         for subitem in subs(list(item)):
             sb = [x for x in item if x not in subitem]
             if sb == [] or subitem == []:
