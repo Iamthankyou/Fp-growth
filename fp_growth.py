@@ -84,7 +84,7 @@ def find_frequent_itemsets(transactions, minimum_support, include_support=False)
                             print(i.item + " ", end="")
                         print("] ", end="")
                     print()
-                    # visual_fptree(cond_tree,str(item), item)
+                    visual_fptree(cond_tree,str(item), item)
                     # visual_fptree(cond_tree,str(item))
                     
                     for s in find_with_suffix(cond_tree, found_set):
