@@ -21,15 +21,11 @@ def find_frequent_itemsets(transactions, minimum_support, include_support=False)
         (item, support) for item, support in items.items() if support >= minimum_support
     )
 
-    # Build our FP-tree. Before any transactions can be added to the tree, they
-    # sorted in decreasing order of frequency.
     def clean_transaction(transaction):
         transaction = filter(lambda v: v in items, transaction)
         transaction = sorted(transaction, key=lambda v: items[v], reverse=True)
         return transaction  
 
-    print("Transaction: ")
-    print(transaction)
 
     master = FPTree()
     for transaction in list(map(clean_transaction, transactions)):
@@ -236,9 +232,6 @@ def conditional_tree_from_paths(paths):
     condition_item = None
     items = set()
 
-    # Import the nodes in the paths into the new tree. Only the counts of the
-    # leaf notes matter; the remaining counts will be reconstructed from the
-    # leaf counts.
     for path in paths:
         if condition_item is None:
             condition_item = path[-1].item
